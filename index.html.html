@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscaminas 🎵</title>
+<style>
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+}
+
+body {
+    margin: 0;
+    background: linear-gradient(135deg, #0D1B2A, #1B1F3B, #6A4C93);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    color: white;
+}
+
+h1 {
+    margin: 10px 0;
+    text-shadow: 0 0 10px #A53860;
+}
+
+.panel {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(10px);
+    padding: 15px 20px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.panel-stats {
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 15px;
+}
+
+.stat {
+    background: rgba(106, 76, 147, 0.3);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.stat span {
+    color: #FFB700;
+}
+
+.contador {
+    background: #000;
+    color: #FF3B3B;
+    font-family: monospace;
+    font-size: 24px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    min-width: 70px;
+    text-align: center;
+    border: 2px inset #333;
+}
+
+button, select {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #6A4C93, #A53860);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover { transform: scale(1.05); }
+select { background: #2E294E; }
+
+#estado {
+    font-size: 28px;
+    cursor: pointer;
+    width: 40px;
+    text-align: center;
+}
+
+#tablero {
+    display: grid;
+    gap: 2px;
+    background: #333;
+    padding: 3px;
+    border: 3px outset #666;
+    border-radius: 5px;
+}
+
+.casilla {
+    width: 30px;
+    height: 30px;
+    background: #C0C0C0;
+    border: 3px outset #E0E0E0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.casilla:hover { background: #D0D0D0; }
+.revelada { border: 1px solid #999; background: #BDBDBD; cursor: default; }
+.bandera { color: #FF3B3B; }
+.mina { background: #FF3B3B!important; animation: explotar 0.6s; }
+
+@keyframes explotar {
+    0% { transform: scale(1); }
+    20% { transform: scale(1.5) rotate(-15deg); }
+    40% { transform: scale(1.2) rotate(15deg); }
+    60% { transform: scale(1.4) rotate(-10deg); }
+    80% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1); }
+}
+
+.c1 { color: #0000FF; }.c2 { color: #008000; }.c3 { color: #FF0000; }
+.c4 { color: #000080; }.c5 { color: #800000; }.c6 { color: #008080; }
+.c7 { color: #000000; }.c8 { color: #808080; }
+
+#records {
+    margin-top: 15px;
+    background: rgba(0,0,0,0.4);
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.mostrar {
+    display: flex;
+    animation: aparecer 0.3s;
+}
+
+@keyframes aparecer {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-contenido {
+    background: linear-gradient(135deg, #1B1F3B, #6A4C93);
+    padding: 30px 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 3px solid #A53860;
+    box-shadow: 0 0 30px rgba(165, 56, 96, 0.8);
+}
+
+.modal-contenido h2 {
+    margin: 0 0 15px 0;
+    font-size: 40px;
+    text-shadow: 0 0 10px #FF3B3B;
+}
+
+.modal-contenido p { font-size: 18px; margin: 10px 0; }
+.modal-contenido button { margin-top: 20px; padding: 12px 30px; font-size: 16px; }
+
+.reproductor {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    padding: 12px 18px;
+    border-radius: 50px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border: 2px solid #6A4C93;
+}
+
+.reproductor button {
+    padding: 8px 12px;
+    font-size: 18px;
+}
+
+.volumen {
+    width: 80px;
+}
+
+@media (max-width: 600px) {
+.casilla { width: 25px; height: 25px; font-size: 14px; }
+.reproductor { bottom: 10px; right: 10px; scale: 0.9; }
+.panel { padding: 10px; gap: 8px; }
+.panel-stats { gap: 15px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<h1>💣 Buscaminas PRO 🎵</h1>
+
+<div class="panel">
+    <div class="contador" id="minas">010</div>
+    <div id="estado" onclick="nuevoJuego()">😀</div>
+    <div class="contador" id="tiempo">000</div>
+
+    <select id="dificultad" onchange="cambiarDificultad()">
+        <option value="9,9,10">Fácil 9x9</option>
+        <option value="16,16,40">Medio 16x16</option>
+        <option value="30,16,99">Experto 30x16</option>
+        <option value="custom">Personalizado</option>
+    </select>
+
+    <button onclick="nuevoJuego()">Nuevo Juego</button>
+</div>
+
+<div class="panel-stats">
+    <div class="stat">🎯 Intentos: <span id="intentos">0</span></div>
+    <div class="stat">💣 Minas: <span id="minasTotales">10</span></div>
+    <div class="stat">🚩 Banderas: <span id="banderasUsadas">0</span></div>
+</div>
+
+<div id="tablero"></div>
+<div id="records"></div>
+
+<div class="reproductor">
+    <button onclick="togglePlay()" id="btnPlay">▶️</button>
+    <select id="selectorCancion" onchange="cambiarCancion()">
+        <option value="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3">Chill Lofi</option>
+        <option value="https://cdn.pixabay.com/download/audio/2022/08/02/audio_884fe92c21.mp3">Epic Arcade</option>
+        <option value="https://cdn.pixabay.com/download/audio/2022/10/25/audio_946bc5e57d.mp3">Puzzle Game</option>
+        <option value="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a73467.mp3">8-bit Adventure</option>
+    </select>
+    <input type="range" class="volumen" id="volumen" min="0" max="100" value="30" onchange="cambiarVolumen()">
+</div>
+
+<div class="modal" id="modalGameOver">
+    <div class="modal-contenido">
+        <h2>💥 BOOM 💥</h2>
+        <p>¡Pisaste una mina!</p>
+        <p id="statsFinales"></p>
+        <button onclick="cerrarModal(); nuevoJuego();">Jugar de nuevo</button>
+    </div>
+</div>
+
+<audio id="musicaFondo" loop></audio>
+<audio id="sonidoClick" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2f7e0b1c0e.mp3"></audio>
+<audio id="sonidoBandera" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_3e3c6c4c1e.mp3"></audio>
+<audio id="sonidoVictoria" src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_3a3490344a.mp3"></audio>
+
+<script>
+let filas = 9, columnas = 9, minas = 10;
+let tablero = [];
+let reveladas = 0, banderas = 0, intentos = 0;
+let juegoActivo = false, primerClick = true;
+let tiempo = 0, timer = null;
+
+const musicaFondo = document.getElementById('musicaFondo');
+const sonidoClick = document.getElementById('sonidoClick');
+const sonidoBandera = document.getElementById('sonidoBandera');
+const sonidoVictoria = document.getElementById('sonidoVictoria');
+let musicaReproduciendo = false;
+
+// URL del sonido de explosión
+const urlExplosion = 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3';
+
+const tableroDiv = document.getElementById('tablero');
+const minasDiv = document.getElementById('minas');
+const tiempoDiv = document.getElementById('tiempo');
+const estadoDiv = document.getElementById('estado');
+const modalGameOver = document.getElementById('modalGameOver');
+const intentosDiv = document.getElementById('intentos');
+const minasTotalesDiv = document.getElementById('minasTotales');
+const banderasUsadasDiv = document.getElementById('banderasUsadas');
+
+function cambiarCancion() {
+    const url = document.getElementById('selectorCancion').value;
+    musicaFondo.src = url;
+    musicaFondo.load();
+    if (musicaReproduciendo) {
+        musicaFondo.play().catch(e => console.log('Autoplay bloqueado'));
+    }
+}
+
+function togglePlay() {
+    if (musicaReproduciendo) {
+        musicaFondo.pause();
+        document.getElementById('btnPlay').textContent = '▶️';
+        musicaReproduciendo = false;
+    } else {
+        musicaFondo.play().catch(e => console.log('Click para activar audio'));
+        document.getElementById('btnPlay').textContent = '⏸️';
+        musicaReproduciendo = true;
+    }
+}
+
+function cambiarVolumen() {
+    const vol = document.getElementById('volumen').value / 100;
+    musicaFondo.volume = vol;
+    sonidoClick.volume = vol;
+    sonidoBandera.volume = vol;
+    sonidoVictoria.volume = vol;
+}
+
+function playSonido(audio) {
+    audio.currentTime = 0;
+    audio.play().catch(e => {});
+}
+
+// NUEVA FUNCIÓN: Crea un audio nuevo cada vez para que suene en cada bomba
+function playExplosion() {
+    const audio = new Audio(urlExplosion);
+    audio.volume = document.getElementById('volumen').value / 100;
+    audio.play().catch(e => {});
+}
+
+function cambiarDificultad() {
+    const val = document.getElementById('dificultad').value;
+    if(val === 'custom') {
+        filas = parseInt(prompt('Filas:', 9)) || 9;
+        columnas = parseInt(prompt('Columnas:', 9)) || 9;
+        minas = parseInt(prompt('Minas:', 10)) || 10;
+        filas = Math.max(5, Math.min(50, filas));
+        columnas = Math.max(5, Math.min(50, columnas));
+        minas = Math.max(1, Math.min(filas * columnas - 1, minas));
+    } else {
+        [filas, columnas, minas] = val.split(',').map(Number);
+    }
+    nuevoJuego();
+}
+
+function nuevoJuego() {
+    clearInterval(timer);
+    timer = null;
+    tiempo = 0;
+    reveladas = 0;
+    banderas = 0;
+    intentos = 0;
+    primerClick = true;
+    juegoActivo = true;
+    estadoDiv.textContent = '😀';
+
+    actualizarContadores();
+    actualizarStats();
+    generarTablero();
+    crearCasillas();
+    cargarRecords();
+}
+
+function generarTablero() {
+    tablero = [];
+    for(let i = 0; i < filas; i++) {
+        tablero[i] = [];
+        for(let j = 0; j < columnas; j++) {
+            tablero[i][j] = { mina: false, revelada: false, bandera: false, numero: 0 };
+        }
+    }
+}
+
+function colocarMinas(salvoF, salvoC) {
+    let minasColocadas = 0;
+    while(minasColocadas < minas) {
+        let f = Math.floor(Math.random() * filas);
+        let c = Math.floor(Math.random() * columnas);
+
+        if((Math.abs(f - salvoF) <= 1 && Math.abs(c - salvoC) <= 1) || tablero[f][c].mina) {
+            continue;
+        }
+
+        tablero[f][c].mina = true;
+        minasColocadas++;
+    }
+    calcularNumeros();
+}
+
+function calcularNumeros() {
+    for(let i = 0; i < filas; i++) {
+        for(let j = 0; j < columnas; j++) {
+            if(tablero[i][j].mina) continue;
+
+            let count = 0;
+            for(let di = -1; di <= 1; di++) {
+                for(let dj = -1; dj <= 1; dj++) {
+                    let ni = i + di, nj = j + dj;
+                    if(ni >= 0 && ni < filas && nj >= 0 && nj < columnas) {
+                        if(tablero[ni][nj].mina) count++;
+                    }
+                }
+            }
+            tablero[i][j].numero = count;
+        }
+    }
+}
+
+function crearCasillas() {
+    tableroDiv.style.gridTemplateColumns = `repeat(${columnas}, 1fr)`;
+    tableroDiv.innerHTML = '';
+
+    for(let i = 0; i < filas; i++) {
+        for(let j = 0; j < columnas; j++) {
+            const casilla = document.createElement('div');
+            casilla.className = 'casilla';
+            casilla.dataset.fila = i;
+            casilla.dataset.col = j;
+
+            casilla.onclick = () => clickCasilla(i, j);
+            casilla.oncontextmenu = (e) => {
+                e.preventDefault();
+                ponerBandera(i, j);
+            };
+
+            let pressTimer;
+            casilla.ontouchstart = () => {
+                pressTimer = setTimeout(() => ponerBandera(i, j), 500);
+            };
+            casilla.ontouchend = () => clearTimeout(pressTimer);
+
+            tableroDiv.appendChild(casilla);
+        }
+    }
+}
+
+function clickCasilla(f, c) {
+    if(!juegoActivo || tablero[f][c].revelada || tablero[f][c].bandera) return;
+
+    intentos++;
+    actualizarStats();
+    playSonido(sonidoClick);
+
+    if(primerClick) {
+        primerClick = false;
+        colocarMinas(f, c);
+        iniciarTimer();
+        if (!musicaReproduciendo) togglePlay();
+    }
+
+    if(tablero[f][c].mina) {
+        gameOver(false);
+        return;
+    }
+
+    revelarCasilla(f, c);
+    verificarVictoria();
+}
+
+function revelarCasilla(f, c) {
+    if(f < 0 || f >= filas || c < 0 || c >= columnas) return;
+    if(tablero[f][c].revelada || tablero[f][c].bandera) return;
+
+    tablero[f][c].revelada = true;
+    reveladas++;
+
+    const casilla = document.querySelector(`[data-fila="${f}"][data-col="${c}"]`);
+    casilla.classList.add('revelada');
+
+    if(tablero[f][c].numero > 0) {
+        casilla.textContent = tablero[f][c].numero;
+        casilla.classList.add(`c${tablero[f][c].numero}`);
+    } else {
+        for(let di = -1; di <= 1; di++) {
+            for(let dj = -1; dj <= 1; dj++) {
+                revelarCasilla(f + di, c + dj);
+            }
+        }
+    }
+}
+
+function ponerBandera(f, c) {
+    if(!juegoActivo || tablero[f][c].revelada) return;
+
+    playSonido(sonidoBandera);
+    const casilla = document.querySelector(`[data-fila="${f}"][data-col="${c}"]`);
+
+    if(tablero[f][c].bandera) {
+        tablero[f][c].bandera = false;
+        casilla.textContent = '';
+        casilla.classList.remove('bandera');
+        banderas--;
+    } else if(banderas < minas) {
+        tablero[f][c].bandera = true;
+        casilla.textContent = '🚩';
+        casilla.classList.add('bandera');
+        banderas++;
+    }
+
+    actualizarContadores();
+    actualizarStats();
+}
+
+function gameOver(gano) {
+    juegoActivo = false;
+    clearInterval(timer);
+
+    if(gano) {
+        estadoDiv.textContent = '😎';
+        playSonido(sonidoVictoria);
+        guardarRecord();
+        setTimeout(() => alert(`¡Ganaste! 🎉 Tiempo: ${tiempo}s | Intentos: ${intentos}`), 100);
+    } else {
+        estadoDiv.textContent = '😵';
+        musicaFondo.pause();
+        revelarTodasLasMinas();
+        setTimeout(() => mostrarModalGameOver(), 1000);
+    }
+}
+
+function mostrarModalGameOver() {
+    document.getElementById('statsFinales').innerHTML = `
+        Tiempo: ${tiempo} segundos<br>
+        Intentos: ${intentos}<br>
+        Casillas reveladas: ${reveladas}/${filas * columnas - minas}<br>
+        Minas: ${minas}
+    `;
+    modalGameOver.classList.add('mostrar');
+}
+
+function cerrarModal() {
+    modalGameOver.classList.remove('mostrar');
+}
+
+// ARREGLADO: Ahora cada bomba suena 💥
+function revelarTodasLasMinas() {
+    let delay = 0;
+
+    for(let i = 0; i < filas; i++) {
+        for(let j = 0; j < columnas; j++) {
+            if(tablero[i][j].mina) {
+                setTimeout(() => {
+                    const casilla = document.querySelector(`[data-fila="${i}"][data-col="${j}"]`);
+                    if(casilla &&!casilla.classList.contains('mina')) {
+                        casilla.textContent = '💣';
+                        casilla.classList.add('mina');
+                        playExplosion(); // Cada bomba suena
+                    }
+                }, delay);
+                delay += 100; // 100ms entre cada bomba
+            }
+        }
+    }
+}
+
+function verificarVictoria() {
+    if(reveladas === filas * columnas - minas) {
+        gameOver(true);
+    }
+}
+
+function iniciarTimer() {
+    timer = setInterval(() => {
+        tiempo++;
+        tiempoDiv.textContent = tiempo.toString().padStart(3, '0');
+    }, 1000);
+}
+
+function actualizarContadores() {
+    minasDiv.textContent = (minas - banderas).toString().padStart(3, '0');
+    tiempoDiv.textContent = tiempo.toString().padStart(3, '0');
+}
+
+function actualizarStats() {
+    intentosDiv.textContent = intentos;
+    minasTotalesDiv.textContent = minas;
+    banderasUsadasDiv.textContent = banderas;
+}
+
+function guardarRecord() {
+    const key = `${filas}x${columnas}`;
+    const records = JSON.parse(localStorage.getItem('buscaminas_records')) || {};
+
+    if(!records[key] || tiempo < records[key].tiempo) {
+        records[key] = { tiempo: tiempo, intentos: intentos };
+        localStorage.setItem('buscaminas_records', JSON.stringify(records));
+        cargarRecords();
+    }
+}
+
+function cargarRecords() {
+    const records = JSON.parse(localStorage.getItem('buscaminas_records')) || {};
+    const key = `${filas}x${columnas}`;
+    const recordDiv = document.getElementById('records');
+
+    if(records[key]) {
+        recordDiv.innerHTML = `🏆 Record ${key}: ${records[key].tiempo}s con ${records[key].intentos} intentos`;
+    } else {
+        recordDiv.innerHTML = `🏆 Sin record aún en ${key}`;
+    }
+}
+
+// Inicializar
+cambiarCancion();
+cambiarVolumen();
+nuevoJuego();
+</script>
+
+</body>
+</html>
